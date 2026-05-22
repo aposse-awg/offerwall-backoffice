@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
+
+.main-title{ 
+  background-color: #1e1e47;
+  text-align: center;
+  color: white;
+}
+.records{
+  margin-top: 20px;
+  font-size: 1.2em;
+}
+.ant-table-content{
+ text-align: center;
+ font-size: 16px;
+}
+.awg-icon{
+width: 140px;
+}
+nav{
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-content: center;
+  align-items: center;
+  font-size: 10px;
+  margin: 24px;
+  font-weight: 700;
+  font-style: normal;
+
+}
+
+
+
+@media (max-width: 768px) {
+  .awg-icon {
+    width: 100px;
+  }
+  nav{
+    margin: 12px;
+    font-size: 1em;
+    gap: 8px;
+  }
+  nav h1 {
+    font-size: 1.3em;
+    margin: 0;
+  }
+  .records {
+    font-size: 1em;
+    margin: 10px 0;
+  }
+}
+
+footer {
+  text-align: center;
+  padding: 16px;
+  font-size: 0.9em;
+  color: #c7d6e8;
+  border-top: 1px solid #1a2e4a;
+  margin-top: 24px;
+}
+
+.ant-menu-dark {
+  text-align: left;
+}
