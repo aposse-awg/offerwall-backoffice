@@ -62,7 +62,7 @@ function Sidebar() {
 
   return (
     <div style={{ width: collapsed ? 80 : 256, flexShrink: 0 }}>
-      {!collapsed && (
+      {!collapsed && user && (
         <div style={{ marginBottom: 18, fontSize: '1.5em' }}>
           Hi, {user.username}
         </div>
