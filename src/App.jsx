@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import 'antd/dist/reset.css'
-import { Layout } from 'antd'
+import { AuthProvider } from './context/AuthContext.jsx'
 //Static Views
+import MainLayout from './components/MainLayout.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
+import Login from './pages/Login.jsx'
 import Navbar from './components/Navbar.jsx'
 import Footer from './components/Footer.jsx'
 
@@ -16,20 +19,16 @@ import './App.css'
 function App() {
   return (
     <BrowserRouter>
-      <Layout className="main-title">
-        <Navbar />
-        <div style={{ display: 'flex' }}>
-          <Sidebar />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/carrier/:carrierSlug" element={<CarrierView />} />
-              <Route path="/publisher/:publisherSlug" element={<PublisherView />} />
-            </Routes>
-          </div>
-        </div>
-        <Footer />
-      </Layout>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/carrier/:carrierSlug" element={<ProtectedRoute><CarrierView /></ProtectedRoute>} />
+            <Route path="/publisher/:publisherSlug" element={<ProtectedRoute><PublisherView /></ProtectedRoute>} />
+          </Route>
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

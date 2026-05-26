@@ -6,8 +6,10 @@ import {
   UserOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import sessions from '../data/sessions.json'
 
 const slugify = (str) => str.toLowerCase().replace(/\s+/g, '-')
@@ -16,6 +18,7 @@ function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+  const { user, logout } = useAuth()
 
   const isInCarrierView = location.pathname.startsWith('/carrier/')
   const isInPublisherView = location.pathname.startsWith('/publisher/')
@@ -52,8 +55,18 @@ function Sidebar() {
       : []),
   ]
 
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
   return (
     <div style={{ width: collapsed ? 80 : 256, flexShrink: 0 }}>
+      {!collapsed && (
+        <div style={{ marginBottom: 18, fontSize: '1.5em' }}>
+          Hi, {user.username}
+        </div>
+      )}
       <Button
         type="primary"
         onClick={() => setCollapsed(!collapsed)}
@@ -72,6 +85,25 @@ function Sidebar() {
         }}
         items={items}
       />
+
+      {user && (
+        <div>
+          <Button
+            onClick={handleLogout}
+            icon={<LogoutOutlined />}
+            style={{
+              marginTop: '28px',
+              color: '#ffffff',
+              backgroundColor: '#db4447',
+              width: '90%',
+              border: 'none',
+            }}
+            block
+          >
+            {!collapsed && 'Logout'}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

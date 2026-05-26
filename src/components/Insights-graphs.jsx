@@ -135,20 +135,20 @@ function Insights({ data, variant = 'full' }) {
             <Pie {...pieConfig} />
           </Card>
         </Col>
-{variant !== 'carrier' && (
-  <>
-    <Col xs={24} md={12}>
-      <Card title="Transactions by Carrier">
-        <Column {...columnConfig} />
-      </Card>
-    </Col>
-    <Col xs={24} md={12}>
-      <Card title="Revenue by Carrier">
-        <Column {...revenueConfig} />
-      </Card>
-    </Col>
-  </>
-)}
+        {variant !== 'carrier' && (
+          <>
+            <Col xs={24} md={12}>
+              <Card title="Transactions by Carrier">
+                <Column {...columnConfig} />
+              </Card>
+            </Col>
+            <Col xs={24} md={12}>
+              <Card title="Revenue by Carrier">
+                <Column {...revenueConfig} />
+              </Card>
+            </Col>
+          </>
+        )}
         <Col xs={24} md={12}>
           <Card
             title={`Sessions By ${period.charAt(0).toUpperCase() + period.slice(1)}`}
