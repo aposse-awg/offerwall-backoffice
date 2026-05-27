@@ -1,10 +1,10 @@
 import { createContext, useContext, useState } from 'react'
 
 const USERS = {
-  admin:  { password: 'admin123',  role: 'admin',     scope: null },
-  claro:  { password: 'claro123',  role: 'carrier',   scope: 'claro-ar' },
-  dlocal: { password: 'dlocal123', role: 'carrier',   scope: 'dlocal-ar' },
-  shonen: { password: 'shonen123', role: 'publisher', scope: 'shonengamespodcast' },
+  admin:  { password: 'admin123',  role: 'admin',           scope: null },
+  claro:  { password: 'claro123',  role: 'payment-entity',  scope: 'claro-ar' },
+  dlocal: { password: 'dlocal123', role: 'payment-entity',  scope: 'dlocal-ar' },
+  shonen: { password: 'shonen123', role: 'publisher',       scope: 'shonengamespodcast' },
 }
 
 

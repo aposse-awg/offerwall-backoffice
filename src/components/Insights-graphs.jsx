@@ -34,6 +34,8 @@ function Insights({ data, variant = 'full' }) {
 
   const lineConfig = {
     data: sessionsByPeriod,
+    autofit: true,
+    responsive: true,
     xField: 'date',
     yField: 'count',
     point: { shape: 'circle', size: 4 },
@@ -53,24 +55,26 @@ function Insights({ data, variant = 'full' }) {
     { type: 'Unpaid', value: data.filter((s) => !s.paidAt).length },
   ]
 
-  const byCarrier = Object.entries(
+  const byPaymentEntity = Object.entries(
     data.reduce((acc, s) => {
-      const name = s.provider?.name || 'Unknown Carrier'
+      const name = s.provider?.name || 'Unknown Provider'
       acc[name] = (acc[name] || 0) + 1
       return acc
     }, {}),
-  ).map(([carrier, count]) => ({ carrier, count }))
+  ).map(([paymentEntity, count]) => ({ paymentEntity, count }))
 
-  const revenueByCarrier = Object.entries(
+  const revenueByPaymentEntity = Object.entries(
     data.reduce((acc, s) => {
-      const name = s.provider?.name || 'Unknown Carrier'
+      const name = s.provider?.name || 'Unknown Provider'
       acc[name] = (acc[name] || 0) + Number(s.paidPrice || 0)
       return acc
     }, {}),
-  ).map(([carrier, revenue]) => ({ carrier, revenue }))
+  ).map(([paymentEntity, revenue]) => ({ paymentEntity, revenue }))
 
   const pieConfig = {
     data: paidVsUnpaid,
+    autofit: true,
+    responsive: true,
     angleField: 'value',
     colorField: 'type',
     label: { text: 'value', fontSize: 16 },
@@ -83,10 +87,13 @@ function Insights({ data, variant = 'full' }) {
   }
 
   const columnConfig = {
-    data: byCarrier,
-    xField: 'carrier',
+    data: byPaymentEntity,
+    autofit: true,
+    responsive: true,
+
+    xField: 'paymentEntity',
     yField: 'count',
-    colorField: 'carrier',
+    colorField: 'paymentEntity',
     label: {
       position: 'bottom',
       style: {
@@ -102,10 +109,12 @@ function Insights({ data, variant = 'full' }) {
   }
 
   const revenueConfig = {
-    data: revenueByCarrier,
-    xField: 'carrier',
+    data: revenueByPaymentEntity,
+    autofit: true,
+    responsive: true,
+    xField: 'paymentEntity',
     yField: 'revenue',
-    colorField: 'carrier',
+    colorField: 'paymentEntity',
     label: {
       position: 'bottom',
       text: (datum) =>
@@ -128,22 +137,22 @@ function Insights({ data, variant = 'full' }) {
   }
 
   return (
-    <div style={{ padding: '0 20px', marginTop: 24 }}>
-      <Row gutter={[16, 16]}>
+    <div style={{ padding: '0 20px', marginTop: 24, overflow: 'hidden', width: '100%' }}>
+      <Row gutter={[16, 16]} style={{ width: '100%' }}>
         <Col xs={24} md={12}>
           <Card title="Paid vs Unpaid Sessions">
             <Pie {...pieConfig} />
           </Card>
         </Col>
-        {variant !== 'carrier' && (
+        {variant !== 'payment-entity' && (
           <>
             <Col xs={24} md={12}>
-              <Card title="Transactions by Carrier">
+              <Card title="Transactions by Payment Entity">
                 <Column {...columnConfig} />
               </Card>
             </Col>
             <Col xs={24} md={12}>
-              <Card title="Revenue by Carrier">
+              <Card title="Revenue by Payment Entity">
                 <Column {...revenueConfig} />
               </Card>
             </Col>

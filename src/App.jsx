@@ -10,7 +10,7 @@ import Footer from './components/Footer.jsx'
 
 //Dynamic Views
 import Dashboard from './pages/Dashboard.jsx'
-import CarrierView from './pages/CarrierView.jsx'
+import PaymentEntityView from './pages/CarrierView.jsx'
 import PublisherView from './pages/PublisherView.jsx'
 import Sidebar from './components/Sidebar.jsx'
 
@@ -24,7 +24,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route element={<MainLayout />}>
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/carrier/:carrierSlug" element={<ProtectedRoute><CarrierView /></ProtectedRoute>} />
+            <Route path="/payment-entity/:paymentEntitySlug" element={<ProtectedRoute><PaymentEntityView /></ProtectedRoute>} />
             <Route path="/publisher/:publisherSlug" element={<ProtectedRoute><PublisherView /></ProtectedRoute>} />
           </Route>
         </Routes>

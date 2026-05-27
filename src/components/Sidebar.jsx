@@ -15,19 +15,19 @@ import sessions from '../data/sessions.json'
 const slugify = (str) => str.toLowerCase().replace(/\s+/g, '-')
 
 function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
 
-  const isInCarrierView = location.pathname.startsWith('/carrier/')
+  const isInPaymentEntityView = location.pathname.startsWith('/payment-entity/')
   const isInPublisherView = location.pathname.startsWith('/publisher/')
-  const isInSpecificView = isInCarrierView || isInPublisherView
+  const isInSpecificView = isInPaymentEntityView || isInPublisherView
 
-  const carrierItems = [
+  const paymentEntityItems = [
     ...new Set(sessions.map((s) => s.provider?.name).filter(Boolean)),
   ].map((name) => ({
-    key: `/carrier/${slugify(name)}`,
+    key: `/payment-entity/${slugify(name)}`,
     label: name,
   }))
 
@@ -40,10 +40,10 @@ function Sidebar() {
     ...(!isInSpecificView
       ? [
           {
-            key: 'carriers',
-            label: 'Carriers',
+            key: 'payment-entities',
+            label: 'Payment Entities',
             icon: <PhoneOutlined />,
-            children: carrierItems,
+            children: paymentEntityItems,
           },
           {
             key: 'publishers',
@@ -79,7 +79,7 @@ function Sidebar() {
         theme="dark"
         inlineCollapsed={collapsed}
         selectedKeys={[location.pathname]}
-        defaultOpenKeys={['carriers', 'publishers']}
+        defaultOpenKeys={['payment-entities', 'publishers']}
         onClick={({ key }) => {
           if (key.startsWith('/')) navigate(key)
         }}

@@ -51,6 +51,9 @@ function SessionsTable({ data }) {
       const validValues = values.filter((v) => {
         // Caso especial: campos anidados como provider.name
         if (key === 'provider.name') {
+          if (v === 'Unknown Provider') {
+            return data.some((record) => !record.provider?.name)
+          }
           return data.some((record) => String(record.provider?.name) === v)
         }
         // Caso especial: paidAt usa valores "Paid"/"Unpaid" pero el campo es booleano
@@ -94,6 +97,10 @@ function SessionsTable({ data }) {
           // Para otros campos, obtener el valor del registro
           let val
           if (key === 'provider.name') {
+            // Caso especial: Unknown Provider
+            if (values.includes('Unknown Provider') && !record.provider?.name) {
+              return true
+            }
             val = record.provider?.name
           } else {
             val = record[key]
@@ -143,7 +150,7 @@ function SessionsTable({ data }) {
 
   // ========== PASO 4: GENERAR OPCIONES DE FILTROS DINÁMICAMENTE ==========
   // Para cada columna, generamos la lista de valores únicos que existen en los datos actuales
-  // Así en CarrierView de Claro, el filtro de Carrier solo muestra "Claro"
+  // Así en PaymentEntityView de Claro, el filtro de Payment Entity solo muestra "Claro"
   
   const {
     carrierFilters,
@@ -168,7 +175,7 @@ function SessionsTable({ data }) {
       ...new Set(data.map((s) => s.provider?.name).filter(Boolean)),
     ].map((name) => ({ text: name, value: name }))
     if (data.some((s) => !s.provider?.name)) {
-      carrierFilters.push({ text: 'Unknown Carrier', value: 'Unknown Carrier' })
+      carrierFilters.push({ text: 'Unknown Provider', value: 'Unknown Provider' })
     }
 
     const publisherFilters = [
@@ -214,17 +221,17 @@ function SessionsTable({ data }) {
       dataIndex: 'shortCode',
     },
     {
-      title: 'Carrier',
+      title: 'Payment Entity',
       dataIndex: ['provider', 'name'],
       key: 'provider.name', // Key para identificar este filtro en el onChange
       filters: carrierFilters, // Opciones disponibles
       filteredValue: validFilters['provider.name'] || null, // Qué está seleccionado (muestra el icono azul)
       onFilter: (value, record) =>
-        value === 'Unknown Carrier'
+        value === 'Unknown Provider'
           ? !record.provider?.name
           : record.provider?.name === value,
       render: (name) => {
-        if (!name) return 'Unknown Carrier'
+        if (!name) return 'Unknown Provider'
         const icon =
           name === 'dLocal AR'
             ? 'https://www.dlocal.com/assets/images/static/favicon-2024-light.png'

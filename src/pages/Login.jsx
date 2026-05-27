@@ -14,7 +14,7 @@ function Login() {
     const user = login(username, password)
     if (!user) return setError('Invalid username or password')
     if (user.role === 'admin') navigate('/')
-    else if (user.role === 'carrier') navigate(`/carrier/${user.scope}`)
+    else if (user.role === 'payment-entity') navigate(`/payment-entity/${user.scope}`)
     else if (user.role === 'publisher') navigate(`/publisher/${user.scope}`)
   }
 

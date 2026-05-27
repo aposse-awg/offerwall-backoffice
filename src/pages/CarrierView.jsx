@@ -7,27 +7,27 @@ import Kpis from '../components/Kpis.jsx'
 const slugify = (str) => str.toLowerCase().replace(/\s+/g, '-')
 
 
-function CarrierView() {
-  const { carrierSlug } = useParams()
+function PaymentEntityView() {
+  const { paymentEntitySlug } = useParams()
 
-  const carrierSessions = sessions.filter(
-    (s) => s.provider?.name && slugify(s.provider.name) === carrierSlug,
+  const paymentEntitySessions = sessions.filter(
+    (s) => s.provider?.name && slugify(s.provider.name) === paymentEntitySlug,
   )
 
-  if (carrierSessions.length === 0) {
-    return <h2 style={{ textAlign: 'center', padding: 40 }}>Carrier not found</h2>
+  if (paymentEntitySessions.length === 0) {
+    return <h2 style={{ textAlign: 'center', padding: 40 }}>Payment Entity not found</h2>
   }
 
-  const carrierName = carrierSessions[0].provider.name
+  const paymentEntityName = paymentEntitySessions[0].provider.name
 
   return (
     <>
-      <h2 style={{ textAlign: 'center', margin: '16px 0' }}>{carrierName}</h2>
-      <Kpis data={carrierSessions} />
-      <SessionsTable data={carrierSessions} />
-      <Insights data={carrierSessions} variant="carrier" />
+      <h2 style={{ textAlign: 'center', margin: '16px 0' }}>{paymentEntityName}</h2>
+      <Kpis data={paymentEntitySessions} />
+      <SessionsTable data={paymentEntitySessions} />
+      <Insights data={paymentEntitySessions} variant="payment-entity" />
     </>
   )
 }
 
-export default CarrierView
+export default PaymentEntityView
