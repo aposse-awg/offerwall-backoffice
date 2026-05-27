@@ -1,9 +1,27 @@
 import { Pie, Column, Line } from '@ant-design/charts'
 import { Row, Col, Card, Segmented } from 'antd'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 function Insights({ data, variant = 'full' }) {
   const [period, setPeriod] = useState('day')
+  const [containerWidth, setContainerWidth] = useState(0)
+  const containerRef = useRef(null)
+
+  // Detectar cambios de tamaño del contenedor (para re-render cuando sidebar se expande/contrae)
+  useEffect(() => {
+    const observer = new ResizeObserver(() => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth)
+      }
+    })
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current)
+      setContainerWidth(containerRef.current.clientWidth)
+    }
+
+    return () => observer.disconnect()
+  }, [])
 
   const groupByPeriod = (dateStr, p) => {
     const d = new Date(dateStr)
@@ -137,8 +155,8 @@ function Insights({ data, variant = 'full' }) {
   }
 
   return (
-    <div style={{ padding: '0 20px', marginTop: 24, overflow: 'hidden', width: '100%' }}>
-      <Row gutter={[16, 16]} style={{ width: '100%' }}>
+    <div ref={containerRef} style={{ padding: '0 20px', marginTop: 24, overflow: 'hidden', width: '100%' }}>
+      <Row gutter={[16, 16]} style={{ width: '100%', key: containerWidth }}>
         <Col xs={24} md={12}>
           <Card title="Paid vs Unpaid Sessions">
             <Pie {...pieConfig} />

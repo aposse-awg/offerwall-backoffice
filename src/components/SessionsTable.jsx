@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
-import { Table, Grid } from 'antd'
+import { Table, Grid, Button } from 'antd'
+import { DownloadOutlined } from '@ant-design/icons';
 import { useSearchParams } from 'react-router-dom'
 const { useBreakpoint } = Grid
 
@@ -9,9 +10,6 @@ function SessionsTable({ data }) {
 
   // ========== PASO 1: LEER ESTADO DESDE URL ==========
   // Extraemos filtros, sorter y pagination que el usuario guardó en la URL
-  
-  // Leer filtros: buscamos parámetros que comiencen con "filter_"
-  // Ej: ?filter_country=AR,US&filter_paidAt=Paid
   const savedFilters = useMemo(() => {
     const filters = {}
     searchParams.forEach((value, key) => {
@@ -355,11 +353,48 @@ function SessionsTable({ data }) {
     setSearchParams(newParams)
   }
 
+
+const handleExportCSV = () => {
+  const headers = columns.map(col => col.title).join(',')
+  
+  const rows = filteredData.map(record => {
+    return columns.map(col => {
+      let value
+
+      if (Array.isArray(col.dataIndex)) {
+        value = col.dataIndex.reduce((obj, key) => obj?.[key], record)
+      } else {
+        value = record[col.dataIndex]
+      }
+
+      if (col.dataIndex === 'createdAt' || col.dataIndex === 'expiresAt' || col.dataIndex === 'paidAt') {
+        value = value ? formatDate(value) : ''
+      }
+
+      return `"${String(value || '').replace(/"/g, '""')}"`
+    }).join(',')
+  })
+
+  const csv = [headers, ...rows].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+  link.setAttribute('href', url)
+  link.setAttribute('download', 'sessions.csv')
+  link.click()
+}
+
+
+
   // ========== PASO 7: RENDERIZAR TABLE ==========
   // Controlado: le pasamos explícitamente qué mostrar (filtros, orden, página)
   // Antd lee estos valores y actualiza el UI
   
   return (
+    <>
+    <div className='csv-button'>
+    <Button type='primary' icon={<DownloadOutlined />} onClick={handleExportCSV}> Export to CSV</Button>
+    </div>
     <Table
       style={{ margin: screens.md ? '20px' : '10px' }}
       columns={columns}
@@ -407,6 +442,7 @@ function SessionsTable({ data }) {
         </Table.Summary>
       )}
     />
+    </>
   )
 }
 

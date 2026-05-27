@@ -67,3 +67,9 @@ footer {
 .ant-menu-dark {
   text-align: left;
 }
+
+.csv-button{
+  display: flex;
+  justify-content: flex-end;
+  margin: 10px 20px;
+}
