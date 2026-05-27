@@ -79,7 +79,6 @@ function Sidebar() {
         theme="dark"
         inlineCollapsed={collapsed}
         selectedKeys={[location.pathname]}
-        defaultOpenKeys={['payment-entities', 'publishers']}
         onClick={({ key }) => {
           if (key.startsWith('/')) navigate(key)
         }}
