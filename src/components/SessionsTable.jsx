@@ -1,15 +1,16 @@
-import { useMemo } from 'react'
-import { Table, Grid, Button } from 'antd'
-import { DownloadOutlined } from '@ant-design/icons';
+import { useMemo, useState } from 'react'
+import { Table, Grid, Button, Input } from 'antd'
+import { DownloadOutlined } from '@ant-design/icons'
 import { useSearchParams } from 'react-router-dom'
 const { useBreakpoint } = Grid
 
 function SessionsTable({ data }) {
   const screens = useBreakpoint()
+  const [searchValue, setSearchValue] = useState('')
+
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // ========== PASO 1: LEER ESTADO DESDE URL ==========
-  // Extraemos filtros, sorter y pagination que el usuario guardó en la URL
+  // Extract filters, sorter, pagination from URL
   const savedFilters = useMemo(() => {
     const filters = {}
     searchParams.forEach((value, key) => {
@@ -21,16 +22,14 @@ function SessionsTable({ data }) {
     return filters
   }, [searchParams])
 
-  // Leer sorter: buscamos sort_field y sort_order
-  // Ej: ?sort_field=createdAt&sort_order=ascend
+  // Extract sorter from URL params
   const savedSorter = useMemo(() => {
     const field = searchParams.get('sort_field')
     const order = searchParams.get('sort_order')
     return field && order ? { field, order } : null
   }, [searchParams])
 
-  // Leer pagination: buscamos page y pageSize
-  // Ej: ?page=2&pageSize=10
+  // Extract pagination from URL params
   const savedPagination = useMemo(() => {
     return {
       current: Number(searchParams.get('page')) || 1,
@@ -38,32 +37,28 @@ function SessionsTable({ data }) {
     }
   }, [searchParams])
 
-  // ========== PASO 2: VALIDAR FILTROS ==========
-  // Algunos filtros guardados en URL pueden no existir en los datos actuales
-  // (ej: filtrar por "dLocal" cuando estamos en CarrierView de Claro)
-  // Aquí limpiamos esos filtros inválidos
-  
+  // Validate filters (remove filters not in current data)
   const validFilters = useMemo(() => {
     const filtered = {}
     Object.entries(savedFilters).forEach(([key, values]) => {
       const validValues = values.filter((v) => {
-        // Caso especial: campos anidados como provider.name
+        // Nested field: provider.name
         if (key === 'provider.name') {
           if (v === 'Unknown Provider') {
             return data.some((record) => !record.provider?.name)
           }
           return data.some((record) => String(record.provider?.name) === v)
         }
-        // Caso especial: paidAt usa valores "Paid"/"Unpaid" pero el campo es booleano
+        // Special case: paidAt field is boolean
         if (key === 'paidAt') {
           return data.some((record) =>
             v === 'Paid' ? !!record.paidAt : !record.paidAt,
           )
         }
-        // Caso normal: comparar valor directamente
+        // Standard comparison
         return data.some((record) => String(record[key]) === v)
       })
-      // Solo guardar si hay valores válidos
+      // Keep only valid values
       if (validValues.length > 0) {
         filtered[key] = validValues
       }
@@ -71,31 +66,27 @@ function SessionsTable({ data }) {
     return filtered
   }, [savedFilters, data])
 
-  // ========== PASO 3: APLICAR FILTROS Y SORTER A LOS DATOS ==========
-  // Este es el "motor" que calcula qué datos mostrar basado en:
-  // - Los filtros válidos que el usuario seleccionó
-  // - El campo y orden que el usuario eligió para ordenar
-  
+  // Apply filters and sorter to data
   const filteredData = useMemo(() => {
     let result = data
 
-    // APLICAR FILTROS: dejar solo los registros que cumplen con todos los filtros
+    // Filter records matching all criteria
     if (Object.keys(validFilters).length > 0) {
       result = result.filter((record) =>
         Object.entries(validFilters).every(([key, values]) => {
           if (values.length === 0) return true
 
-          // Caso especial: paidAt
+          // Special case: paidAt boolean field
           if (key === 'paidAt') {
-            return values.some(v =>
-              v === 'Paid' ? !!record.paidAt : !record.paidAt
+            return values.some((v) =>
+              v === 'Paid' ? !!record.paidAt : !record.paidAt,
             )
           }
 
-          // Para otros campos, obtener el valor del registro
+          // Get field value from record
           let val
           if (key === 'provider.name') {
-            // Caso especial: Unknown Provider
+            // Unknown Provider case
             if (values.includes('Unknown Provider') && !record.provider?.name) {
               return true
             }
@@ -103,24 +94,28 @@ function SessionsTable({ data }) {
           } else {
             val = record[key]
           }
-          // Incluir registro si su valor está en la lista de filtros seleccionados
+          // Include if value is in selected filters
           return values.includes(String(val))
         }),
       )
     }
 
-    // APLICAR SORTER: ordenar los datos por el campo y dirección elegida
+    // Sort by field and direction
     if (savedSorter) {
       const { field, order } = savedSorter
       result = [...result].sort((a, b) => {
         let aVal, bVal
 
-        // Obtener valores según el campo
+        // Get sort values
         if (field === 'provider.name') {
           aVal = a.provider?.name
           bVal = b.provider?.name
-        } else if (field === 'createdAt' || field === 'expiresAt' || field === 'paidAt') {
-          // Convertir fechas a Date objects para comparación correcta
+        } else if (
+          field === 'createdAt' ||
+          field === 'expiresAt' ||
+          field === 'paidAt'
+        ) {
+          // Convert dates for comparison
           aVal = new Date(a[field])
           bVal = new Date(b[field])
         } else {
@@ -128,7 +123,7 @@ function SessionsTable({ data }) {
           bVal = b[field]
         }
 
-        // Comparar según orden ascendente o descendente
+        // Compare ascending/descending
         if (order === 'ascend') {
           return aVal > bVal ? 1 : -1
         } else {
@@ -140,16 +135,26 @@ function SessionsTable({ data }) {
     return result
   }, [data, validFilters, savedSorter])
 
+  // Global search filter
+  const searchedData = useMemo(() => {
+    if (!searchValue.trim()) return filteredData
+
+    const query = searchValue.toLowerCase()
+    return filteredData.filter(record =>
+      String(record.phone || '').toLowerCase().includes(query) ||
+      String(record.email || '').toLowerCase().includes(query) ||
+      String(record.id || '').toLowerCase().includes(query) ||
+      String(record.shortCode || '').toLowerCase().includes(query)
+    )
+  }, [filteredData, searchValue])
+
   const formatDate = (v) =>
     new Date(v).toLocaleString('es-AR', {
       dateStyle: 'short',
       timeStyle: 'short',
     })
 
-  // ========== PASO 4: GENERAR OPCIONES DE FILTROS DINÁMICAMENTE ==========
-  // Para cada columna, generamos la lista de valores únicos que existen en los datos actuales
-  // Así en PaymentEntityView de Claro, el filtro de Payment Entity solo muestra "Claro"
-  
+  // Generate dynamic filter options from data
   const {
     carrierFilters,
     publisherFilters,
@@ -173,7 +178,10 @@ function SessionsTable({ data }) {
       ...new Set(data.map((s) => s.provider?.name).filter(Boolean)),
     ].map((name) => ({ text: name, value: name }))
     if (data.some((s) => !s.provider?.name)) {
-      carrierFilters.push({ text: 'Unknown Provider', value: 'Unknown Provider' })
+      carrierFilters.push({
+        text: 'Unknown Provider',
+        value: 'Unknown Provider',
+      })
     }
 
     const publisherFilters = [
@@ -189,17 +197,13 @@ function SessionsTable({ data }) {
     }
   }, [data])
 
-  // ========== PASO 5: DEFINIR COLUMNAS CON ESTADOS CONTROLADOS ==========
-  // Cada columna puede tener:
-  // - filteredValue: qué filtros están activos (para mostrar el icono azul)
-  // - sortOrder: qué orden está activo (para mostrar la flecha de ordenamiento)
-  
+  // Define table columns with controlled state
   const columns = [
     {
       title: 'Created At',
       dataIndex: 'createdAt',
-      sorter: true, // Permite ordenar
-      sortOrder: savedSorter?.field === 'createdAt' ? savedSorter.order : null, // Mostrar si está ordenado
+      sorter: true,
+      sortOrder: savedSorter?.field === 'createdAt' ? savedSorter.order : null,
       render: formatDate,
       fixed: 'left',
     },
@@ -221,9 +225,9 @@ function SessionsTable({ data }) {
     {
       title: 'Payment Entity',
       dataIndex: ['provider', 'name'],
-      key: 'provider.name', // Key para identificar este filtro en el onChange
-      filters: carrierFilters, // Opciones disponibles
-      filteredValue: validFilters['provider.name'] || null, // Qué está seleccionado (muestra el icono azul)
+      key: 'provider.name',
+      filters: carrierFilters,
+      filteredValue: validFilters['provider.name'] || null,
       onFilter: (value, record) =>
         value === 'Unknown Provider'
           ? !record.provider?.name
@@ -322,126 +326,140 @@ function SessionsTable({ data }) {
     0,
   )
 
-  // ========== PASO 6: HANDLER DE CAMBIOS ==========
-  // Cuando el usuario:
-  // - Aplica un filtro
-  // - Ordena por una columna
-  // - Cambia de página
-  // Este handler captura TODOS esos cambios y los guarda en la URL
-  
+  // Handle table changes (filters, sort, pagination)
   const handleTableChange = (pagination, filters, sorter, extra) => {
     const newParams = new URLSearchParams()
 
-    // Guardar en URL: número de página y cantidad de registros por página
+    // Save pagination to URL
     newParams.set('page', String(pagination.current))
     newParams.set('pageSize', String(pagination.pageSize))
 
-    // Guardar en URL: todos los filtros activos con el prefijo "filter_"
+    // Save active filters to URL
     Object.entries(filters).forEach(([key, value]) => {
       if (value && value.length > 0) {
         newParams.set(`filter_${key}`, value.join(','))
       }
     })
 
-    // Guardar en URL: campo y orden del sorter
+    // Save sorter to URL
     if (sorter && sorter.field) {
       newParams.set('sort_field', String(sorter.field))
       newParams.set('sort_order', String(sorter.order))
     }
 
-    // Actualizar URL con los nuevos parámetros
+    // Update URL with new params
     setSearchParams(newParams)
   }
 
+  const handleExportCSV = () => {
+    const headers = columns.map((col) => col.title).join(',')
 
-const handleExportCSV = () => {
-  const headers = columns.map(col => col.title).join(',')
-  
-  const rows = filteredData.map(record => {
-    return columns.map(col => {
-      let value
+    const rows = filteredData.map((record) => {
+      return columns
+        .map((col) => {
+          let value
 
-      if (Array.isArray(col.dataIndex)) {
-        value = col.dataIndex.reduce((obj, key) => obj?.[key], record)
-      } else {
-        value = record[col.dataIndex]
-      }
+          if (Array.isArray(col.dataIndex)) {
+            value = col.dataIndex.reduce((obj, key) => obj?.[key], record)
+          } else {
+            value = record[col.dataIndex]
+          }
 
-      if (col.dataIndex === 'createdAt' || col.dataIndex === 'expiresAt' || col.dataIndex === 'paidAt') {
-        value = value ? formatDate(value) : ''
-      }
+          if (
+            col.dataIndex === 'createdAt' ||
+            col.dataIndex === 'expiresAt' ||
+            col.dataIndex === 'paidAt'
+          ) {
+            value = value ? formatDate(value) : ''
+          }
 
-      return `"${String(value || '').replace(/"/g, '""')}"`
-    }).join(',')
-  })
+          return `"${String(value || '').replace(/"/g, '""')}"`
+        })
+        .join(',')
+    })
 
-  const csv = [headers, ...rows].join('\n')
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement('a')
-  const url = URL.createObjectURL(blob)
-  link.setAttribute('href', url)
-  link.setAttribute('download', 'sessions.csv')
-  link.click()
-}
+    const csv = [headers, ...rows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', 'sessions.csv')
+    link.click()
+  }
 
-
-
-  // ========== PASO 7: RENDERIZAR TABLE ==========
-  // Controlado: le pasamos explícitamente qué mostrar (filtros, orden, página)
-  // Antd lee estos valores y actualiza el UI
-  
+  // Render controlled table
   return (
     <>
-    <div className='csv-button'>
-    <Button type='primary' icon={<DownloadOutlined />} onClick={handleExportCSV}> Export to CSV</Button>
-    </div>
-    <Table
-      style={{ margin: screens.md ? '20px' : '10px' }}
-      columns={columns}
-      // Mostramos solo los datos de la página actual
-      dataSource={filteredData.slice(
-        (savedPagination.current - 1) * savedPagination.pageSize,
-        savedPagination.current * savedPagination.pageSize
-      )}
-      rowKey="id"
-      scroll={{ x: 'max-content' }}
-      size={screens.md ? 'middle' : 'small'}
-      // Controlamos la paginación con valores de URL
-      pagination={{
-        current: savedPagination.current,
-        pageSize: savedPagination.pageSize,
-        total: filteredData.length, // Total de registros después de filtrar
-      }}
-      // Cuando algo cambia (filtro, orden, página), llamamos al handler
-      onChange={handleTableChange}
-      summary={() => (
-        <Table.Summary fixed>
-          <Table.Summary.Row>
-            <Table.Summary.Cell index={0} colSpan={columns.length}>
-              <em>
-                Records: {filteredData.slice(
-                  (savedPagination.current - 1) * savedPagination.pageSize,
-                  savedPagination.current * savedPagination.pageSize
-                ).length} of {filteredData.length}
-              </em>
-            </Table.Summary.Cell>
-          </Table.Summary.Row>
-          <Table.Summary.Row>
-            <Table.Summary.Cell index={0} colSpan={paidPriceIndex}>
-              <strong>Total Paid</strong>
-            </Table.Summary.Cell>
-            <Table.Summary.Cell index={paidPriceIndex}>
-              <strong>
-                {totalPaidPrice.toLocaleString('es-AR', {
-                  style: 'currency',
-                  currency: 'ARS',
-                })}
-              </strong>
-            </Table.Summary.Cell>
-          </Table.Summary.Row>
-        </Table.Summary>
-      )}
-    />
+
+
+      <div className="search-export-container">
+          <Input.Search
+    placeholder="Search by phone, email, session ID or short code"
+    value={searchValue}
+    onChange={(e) => setSearchValue(e.target.value)}
+    style={{ maxWidth: 300 }}
+    allowClear
+  />
+        <Button
+          type="primary"
+          icon={<DownloadOutlined />}
+          onClick={handleExportCSV}
+        >
+          {' '}
+          Export to CSV
+        </Button>
+      </div>
+      <Table
+        style={{ margin: screens.md ? '20px' : '10px' }}
+        columns={columns}
+        // Show current page data
+        dataSource={searchedData.slice(
+          (savedPagination.current - 1) * savedPagination.pageSize,
+          savedPagination.current * savedPagination.pageSize,
+        )}
+        rowKey="id"
+        scroll={{ x: 'max-content' }}
+        size={screens.md ? 'middle' : 'small'}
+        // Control pagination from URL
+        pagination={{
+          current: savedPagination.current,
+          pageSize: savedPagination.pageSize,
+          total: searchedData.length,
+        }}
+        // Call handler on table changes
+        onChange={handleTableChange}
+        summary={() => (
+          <Table.Summary fixed>
+            <Table.Summary.Row>
+              <Table.Summary.Cell index={0} colSpan={columns.length}>
+                <em>
+                  Records:{' '}
+                  {
+                    filteredData.slice(
+                      (savedPagination.current - 1) * savedPagination.pageSize,
+                      savedPagination.current * savedPagination.pageSize,
+                    ).length
+                  }{' '}
+                  of {filteredData.length}
+                </em>
+              </Table.Summary.Cell>
+            </Table.Summary.Row>
+            <Table.Summary.Row>
+              <Table.Summary.Cell index={0} colSpan={paidPriceIndex}>
+                <strong>Total Paid</strong>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={paidPriceIndex}>
+                <strong>
+                  {totalPaidPrice.toLocaleString('es-AR', {
+                    style: 'currency',
+                    currency: 'ARS',
+                  })}
+                </strong>
+              </Table.Summary.Cell>
+            </Table.Summary.Row>
+          </Table.Summary>
+        )}
+      />
     </>
   )
 }

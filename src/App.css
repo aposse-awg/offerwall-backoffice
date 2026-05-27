@@ -68,8 +68,9 @@ footer {
   text-align: left;
 }
 
-.csv-button{
+.search-export-container {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   margin: 10px 20px;
 }
