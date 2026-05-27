@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button, Menu } from 'antd'
 import {
   HomeOutlined,
-  ApiOutlined,
+  PhoneOutlined,
   UserOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -42,7 +42,7 @@ function Sidebar() {
           {
             key: 'carriers',
             label: 'Carriers',
-            icon: <ApiOutlined />,
+            icon: <PhoneOutlined />,
             children: carrierItems,
           },
           {

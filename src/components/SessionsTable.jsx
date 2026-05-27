@@ -24,6 +24,17 @@ function SessionsTable({ data }) {
     ...new Set(data.map((s) => s.country).filter(Boolean)),
   ].map((c) => ({ text: c, value: c }))
 
+  const carrierFilters = [
+    ...new Set(data.map((s) => s.provider?.name).filter(Boolean)),
+  ].map((name) => ({ text: name, value: name }))
+  if (data.some((s) => !s.provider?.name)) {
+    carrierFilters.push({ text: 'Unknown Carrier', value: 'Unknown Carrier' })
+  }
+
+  const publisherFilters = [
+    ...new Set(data.map((s) => s.publisherId).filter(Boolean)),
+  ].map((id) => ({ text: 'shonengamespodcast.com/', value: id }))
+
   const columns = [
     {
       title: 'Created At',
@@ -48,12 +59,8 @@ function SessionsTable({ data }) {
     },
     {
       title: 'Carrier',
-      dataIndex: ['provider', 'name'], // antd soporta paths anidados con array
-      filters: [
-        { text: 'dLocal AR', value: 'dLocal AR' },
-        { text: 'Claro AR', value: 'Claro AR' },
-        { text: 'Unknown Carrier', value: 'Unknown Carrier' },
-      ],
+      dataIndex: ['provider', 'name'],
+      filters: carrierFilters,
       onFilter: (value, record) =>
         value === 'Unknown Carrier'
           ? !record.provider?.name
@@ -84,6 +91,8 @@ function SessionsTable({ data }) {
     {
       title: 'Publisher',
       dataIndex: 'publisherId',
+      filters: publisherFilters,
+      onFilter: (value, record) => record.publisherId === value,
       render: (id) => (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <img

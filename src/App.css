@@ -19,16 +19,19 @@ width: 140px;
 nav{
   display: flex;
   flex-direction: row;
-  justify-content: left;
-  gap: 16px;
-  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 30px;
+  flex-wrap: nowrap;
   align-content: center;
   align-items: center;
-  font-size: 10px;
-  margin: 24px;
+  font-size: 14px;
   font-weight: 700;
   font-style: normal;
-
+  color:#ffffff;
+  padding: 24px;
+}
+nav h1 {
+  margin: 0;
 }
 
 
@@ -58,7 +61,7 @@ footer {
   font-size: 0.9em;
   color: #c7d6e8;
   border-top: 1px solid #1a2e4a;
-  margin-top: 24px;
+  margin-top: 60vh;
 }
 
 .ant-menu-dark {
