@@ -6,15 +6,21 @@ import Kpis from '../components/Kpis.jsx'
 
 function Dashboard() {
 const [sessions, setSessions] = useState(() => {
-  const saved = localStorage.getItem('sessions')
+const saved = localStorage.getItem('sessions_admin')
   return saved ? JSON.parse(saved) : sessionsData
 })
   return (
-    <>
-      <Kpis data={sessions} />
-      <SessionsTable data={sessions} onUpdateData={setSessions} />
-      <Insights data={sessions} />
-    </>
+  <>
+    <Kpis data={sessions} />
+    <SessionsTable 
+      data={sessions} 
+      onUpdateData={(newSessions) => {
+        setSessions(newSessions)
+        localStorage.setItem('sessions_admin', JSON.stringify(newSessions))
+      }}
+    />
+    <Insights data={sessions} />
+  </>
   )
 }
 
