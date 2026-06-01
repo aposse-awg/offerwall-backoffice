@@ -1,14 +1,155 @@
-import { useMemo, useState } from 'react'
-import { Table, Grid, Button, Input } from 'antd'
-import { DownloadOutlined } from '@ant-design/icons'
+import React, { useMemo, useState, useContext, useEffect, useRef } from 'react'
+import { useAuth } from '../context/AuthContext'
+import { Table, Grid, Button, Input, Form, Popconfirm, Tag } from 'antd'
+import NotesDrawer from './NotesDrawer.jsx'
+import {
+  DownloadOutlined,
+  EditOutlined,
+  CommentOutlined,
+} from '@ant-design/icons'
 import { useSearchParams } from 'react-router-dom'
+
+//Esto es para hacer el diseño responsive de la tabla
 const { useBreakpoint } = Grid
 
-function SessionsTable({ data }) {
-  const screens = useBreakpoint()
-  const [searchValue, setSearchValue] = useState('')
+//Para poder tener las celdas editables (email y phone)
+const EditableContext = React.createContext(null)
 
+const EditableRow = ({ index, ...props }) => {
+  const [form] = Form.useForm()
+  return (
+    <Form form={form} component={false}>
+      <EditableContext.Provider value={form}>
+        <tr {...props} />
+      </EditableContext.Provider>
+    </Form>
+  )
+}
+
+const EditableCell = ({
+  title,
+  editable,
+  children,
+  dataIndex,
+  record,
+  handleSave,
+  ...restProps
+}) => {
+  const [editing, setEditing] = useState(false)
+  const inputRef = useRef(null)
+  const form = useContext(EditableContext)
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus()
+    }
+  }, [editing])
+
+  const toggleEdit = () => {
+    setEditing(!editing)
+    form.setFieldsValue({ [dataIndex]: record[dataIndex] })
+  }
+
+  const save = async () => {
+    try {
+      const values = await form.validateFields()
+      toggleEdit()
+      handleSave({ ...record, ...values })
+    } catch (errInfo) {
+      console.log('Save failed:', errInfo)
+    }
+  }
+
+  let childNode = children
+
+  if (editable) {
+    childNode = editing ? (
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Form.Item
+          style={{ margin: 0 }}
+          name={dataIndex}
+          rules={[
+            { required: true, message: `${title} es requerido.` },
+            ...(dataIndex === 'email'
+              ? [
+                  {
+                    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: 'Email inválido',
+                  },
+                ]
+              : []),
+          ]}
+        >
+          <Input ref={inputRef} onPressEnter={save} />
+        </Form.Item>
+        <Popconfirm
+          title="Confirm Change"
+          description={`Save changes to ${title}?`}
+          onConfirm={save}
+          onCancel={() => setEditing(false)}
+          okText="Yes"
+          cancelText="No"
+        >
+          <Button type="primary" size="small">
+            Save
+          </Button>
+        </Popconfirm>
+      </div>
+    ) : (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span>{children}</span>
+        <EditOutlined
+          onClick={toggleEdit}
+          style={{ cursor: 'pointer', color: '#1890ff' }}
+        />
+      </div>
+    )
+  }
+
+  return <td {...restProps}>{childNode}</td>
+}
+
+function SessionsTable({ data, onUpdateData }) {
+  const screens = useBreakpoint()
+  const { user } = useAuth()
+  const [searchValue, setSearchValue] = useState('')
   const [searchParams, setSearchParams] = useSearchParams()
+
+  //Drawer para mostrar las notas de cada sesión
+  const [notesDrawerOpen, setNotesDrawerOpen] = useState(false)
+  const [selectedSession, setSelectedSession] = useState(null)
+
+  const handleAddNote = (sessionId, note) => {
+    const newData = data.map((item) => {
+      if (item.id === sessionId) {
+        return {
+          ...item,
+          notes: [...(item.notes || []), note],
+        }
+      }
+      return item
+    })
+
+    localStorage.setItem('sessions', JSON.stringify(newData))
+    onUpdateData(newData)
+  }
+
+  const handleUpdateReviewStatus = (sessionId, newStatus) => {
+    const newData = data.map((item) => {
+      if (item.id === sessionId) {
+        return {
+          ...item,
+          review_status: newStatus,
+          review_updated_at: new Date().toISOString(),
+          review_updated_by: user?.username,
+        }
+      }
+      return item
+    })
+
+    localStorage.setItem('sessions', JSON.stringify(newData))
+    onUpdateData(newData)
+  }
 
   // Extract filters, sorter, pagination from URL
   const savedFilters = useMemo(() => {
@@ -140,11 +281,20 @@ function SessionsTable({ data }) {
     if (!searchValue.trim()) return filteredData
 
     const query = searchValue.toLowerCase()
-    return filteredData.filter(record =>
-      String(record.phone || '').toLowerCase().includes(query) ||
-      String(record.email || '').toLowerCase().includes(query) ||
-      String(record.id || '').toLowerCase().includes(query) ||
-      String(record.shortCode || '').toLowerCase().includes(query)
+    return filteredData.filter(
+      (record) =>
+        String(record.phone || '')
+          .toLowerCase()
+          .includes(query) ||
+        String(record.email || '')
+          .toLowerCase()
+          .includes(query) ||
+        String(record.id || '')
+          .toLowerCase()
+          .includes(query) ||
+        String(record.shortCode || '')
+          .toLowerCase()
+          .includes(query),
     )
   }, [filteredData, searchValue])
 
@@ -196,6 +346,24 @@ function SessionsTable({ data }) {
       phoneFilters,
     }
   }, [data])
+
+  const handleSave = (row) => {
+    // Validar email si se editó
+    if (row.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) {
+      message.error('Email inválido')
+      return
+    }
+
+    // Aquí actualizamos los datos (por ahora solo en memoria)
+    // Después lo guardaremos en BD
+    const newData = data.map((item) =>
+      item.id === row.id ? { ...item, ...row } : item,
+    )
+    // TODO: Guardar newData en slocal storage
+    localStorage.setItem('sessions', JSON.stringify(newData))
+    onUpdateData(newData)
+    console.log('Cambio guardado:', row)
+  }
 
   // Define table columns with controlled state
   const columns = [
@@ -294,6 +462,7 @@ function SessionsTable({ data }) {
     },
     {
       title: 'Phone Number',
+      editable: true,
       dataIndex: 'phone',
       render: (v) => (v ? v : 'Not provided'),
       filters: phoneFilters,
@@ -304,6 +473,7 @@ function SessionsTable({ data }) {
     },
     {
       title: 'Email',
+      editable: true,
       dataIndex: 'email',
       render: (v) => (v ? v : 'Not provided'),
       filters: emailFilters,
@@ -318,7 +488,74 @@ function SessionsTable({ data }) {
       render: (v) => (v ? `ARS$${v}` : 'N/A'),
       fixed: 'right',
     },
+    {
+      title: 'Notes',
+      dataIndex: 'notes',
+      render: (notes, record) => {
+        const lastNote =
+          notes && notes.length > 0 ? notes[notes.length - 1] : null
+        return (
+          <Button
+            type="text"
+            icon={<CommentOutlined />}
+            onClick={() => {
+              setSelectedSession(record)
+              setNotesDrawerOpen(true)
+            }}
+            title={
+              lastNote
+                ? `Last note: ${new Date(lastNote.timestamp).toLocaleString('en-US')}`
+                : 'No notes'
+            }
+          >
+            {lastNote
+              ? new Date(lastNote.timestamp).toLocaleDateString('en-US')
+              : 'Add note and status'}
+          </Button>
+        )
+      },
+    },
+    {
+      title: 'Review Status',
+      dataIndex: 'review_status',
+      render: (status) => {
+        const statusConfig = {
+          'no review': { color: '#1890ff', label: 'No Review' },
+          reviewing: { color: '#faad14', label: 'Reviewing' },
+          finished: { color: '#52c41a', label: 'Finished' },
+        }
+        const config = statusConfig[status] || statusConfig['no review']
+        return (
+          <Tag style={{ backgroundColor: config.color, color: 'white' }}>
+            {config.label}
+          </Tag>
+        )
+      },
+    },
   ]
+
+  const componentsTable = {
+    body: {
+      row: EditableRow,
+      cell: EditableCell,
+    },
+  }
+
+  const editableColumns = columns.map((col) => {
+    if (!col.editable) {
+      return col
+    }
+    return {
+      ...col,
+      onCell: (record) => ({
+        record,
+        editable: col.editable,
+        dataIndex: col.dataIndex,
+        title: col.title,
+        handleSave,
+      }),
+    }
+  })
 
   const paidPriceIndex = columns.findIndex((c) => c.dataIndex === 'paidPrice')
   const totalPaidPrice = filteredData.reduce(
@@ -390,16 +627,14 @@ function SessionsTable({ data }) {
   // Render controlled table
   return (
     <>
-
-
       <div className="search-export-container">
-          <Input.Search
-    placeholder="Search by phone, email, session ID or short code"
-    value={searchValue}
-    onChange={(e) => setSearchValue(e.target.value)}
-    style={{ maxWidth: 300 }}
-    allowClear
-  />
+        <Input.Search
+          placeholder="Search by phone, email, session ID or short code"
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
+          style={{ maxWidth: 300 }}
+          allowClear
+        />
         <Button
           type="primary"
           icon={<DownloadOutlined />}
@@ -411,8 +646,8 @@ function SessionsTable({ data }) {
       </div>
       <Table
         style={{ margin: screens.md ? '20px' : '10px' }}
-        columns={columns}
-        // Show current page data
+        components={componentsTable}
+        columns={editableColumns} // Show current page data
         dataSource={searchedData.slice(
           (savedPagination.current - 1) * savedPagination.pageSize,
           savedPagination.current * savedPagination.pageSize,
@@ -460,6 +695,17 @@ function SessionsTable({ data }) {
           </Table.Summary>
         )}
       />
+      {selectedSession && (
+        <NotesDrawer
+          session={
+            data.find((s) => s.id === selectedSession.id) || selectedSession
+          }
+          open={notesDrawerOpen}
+          onClose={() => setNotesDrawerOpen(false)}
+          onAddNote={handleAddNote}
+          onUpdateReviewStatus={handleUpdateReviewStatus}
+        />
+      )}
     </>
   )
 }
