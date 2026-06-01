@@ -1,9 +1,18 @@
 import React, { useMemo, useState, useContext, useEffect, useRef } from 'react'
-import { Table, Grid, Button, Input, Form, Popconfirm } from 'antd'
-import { DownloadOutlined, EditOutlined } from '@ant-design/icons'
+import { useAuth } from '../context/AuthContext'
+import { Table, Grid, Button, Input, Form, Popconfirm, Tag } from 'antd'
+import NotesDrawer from './NotesDrawer.jsx'
+import {
+  DownloadOutlined,
+  EditOutlined,
+  CommentOutlined,
+} from '@ant-design/icons'
 import { useSearchParams } from 'react-router-dom'
 
+//Esto es para hacer el diseño responsive de la tabla
 const { useBreakpoint } = Grid
+
+//Para poder tener las celdas editables (email y phone)
 const EditableContext = React.createContext(null)
 
 const EditableRow = ({ index, ...props }) => {
@@ -102,8 +111,45 @@ const EditableCell = ({
 
 function SessionsTable({ data, onUpdateData }) {
   const screens = useBreakpoint()
+  const { user } = useAuth()
   const [searchValue, setSearchValue] = useState('')
   const [searchParams, setSearchParams] = useSearchParams()
+
+  //Drawer para mostrar las notas de cada sesión
+  const [notesDrawerOpen, setNotesDrawerOpen] = useState(false)
+  const [selectedSession, setSelectedSession] = useState(null)
+
+  const handleAddNote = (sessionId, note) => {
+    const newData = data.map((item) => {
+      if (item.id === sessionId) {
+        return {
+          ...item,
+          notes: [...(item.notes || []), note],
+        }
+      }
+      return item
+    })
+
+    localStorage.setItem('sessions', JSON.stringify(newData))
+    onUpdateData(newData)
+  }
+
+  const handleUpdateReviewStatus = (sessionId, newStatus) => {
+    const newData = data.map((item) => {
+      if (item.id === sessionId) {
+        return {
+          ...item,
+          review_status: newStatus,
+          review_updated_at: new Date().toISOString(),
+          review_updated_by: user?.username,
+        }
+      }
+      return item
+    })
+
+    localStorage.setItem('sessions', JSON.stringify(newData))
+    onUpdateData(newData)
+  }
 
   // Extract filters, sorter, pagination from URL
   const savedFilters = useMemo(() => {
@@ -442,6 +488,50 @@ function SessionsTable({ data, onUpdateData }) {
       render: (v) => (v ? `ARS$${v}` : 'N/A'),
       fixed: 'right',
     },
+    {
+      title: 'Notes',
+      dataIndex: 'notes',
+      render: (notes, record) => {
+        const lastNote =
+          notes && notes.length > 0 ? notes[notes.length - 1] : null
+        return (
+          <Button
+            type="text"
+            icon={<CommentOutlined />}
+            onClick={() => {
+              setSelectedSession(record)
+              setNotesDrawerOpen(true)
+            }}
+            title={
+              lastNote
+                ? `Last note: ${new Date(lastNote.timestamp).toLocaleString('en-US')}`
+                : 'No notes'
+            }
+          >
+            {lastNote
+              ? new Date(lastNote.timestamp).toLocaleDateString('en-US')
+              : 'Add note and status'}
+          </Button>
+        )
+      },
+    },
+    {
+      title: 'Review Status',
+      dataIndex: 'review_status',
+      render: (status) => {
+        const statusConfig = {
+          'no review': { color: '#1890ff', label: 'No Review' },
+          reviewing: { color: '#faad14', label: 'Reviewing' },
+          finished: { color: '#52c41a', label: 'Finished' },
+        }
+        const config = statusConfig[status] || statusConfig['no review']
+        return (
+          <Tag style={{ backgroundColor: config.color, color: 'white' }}>
+            {config.label}
+          </Tag>
+        )
+      },
+    },
   ]
 
   const componentsTable = {
@@ -605,6 +695,17 @@ function SessionsTable({ data, onUpdateData }) {
           </Table.Summary>
         )}
       />
+      {selectedSession && (
+        <NotesDrawer
+          session={
+            data.find((s) => s.id === selectedSession.id) || selectedSession
+          }
+          open={notesDrawerOpen}
+          onClose={() => setNotesDrawerOpen(false)}
+          onAddNote={handleAddNote}
+          onUpdateReviewStatus={handleUpdateReviewStatus}
+        />
+      )}
     </>
   )
 }

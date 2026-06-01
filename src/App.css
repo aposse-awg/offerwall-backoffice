@@ -1,22 +1,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
 
-.main-title{ 
+.main-title {
   background-color: #041629;
   text-align: center;
   color: white;
 }
-.records{
+
+.records {
   margin-top: 20px;
   font-size: 1.2em;
 }
-.ant-table-content{
- text-align: center;
- font-size: 16px;
+
+.ant-table-content {
+  text-align: center;
+  font-size: 16px;
 }
-.awg-icon{
-width: 140px;
+
+.awg-icon {
+  width: 140px;
 }
-nav{
+
+nav {
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
@@ -27,9 +31,10 @@ nav{
   font-size: 14px;
   font-weight: 700;
   font-style: normal;
-  color:#ffffff;
+  color: #ffffff;
   padding: 24px;
 }
+
 nav h1 {
   margin: 0;
 }
@@ -40,15 +45,18 @@ nav h1 {
   .awg-icon {
     width: 100px;
   }
-  nav{
+
+  nav {
     margin: 12px;
     font-size: 1em;
     gap: 8px;
   }
+
   nav h1 {
     font-size: 1.3em;
     margin: 0;
   }
+
   .records {
     font-size: 1em;
     margin: 10px 0;
@@ -73,4 +81,31 @@ footer {
   justify-content: space-between;
   align-items: center;
   margin: 10px 20px;
+}
+
+/* Custom step colors */
+:root {
+  --step-no-review-color: #1890ff;
+  --step-reviewing-color: #faad14;
+  --step-finished-color: #52c41a;
+}
+
+/* Custom step colors - only when active */
+.step-no-review.ant-steps-item-process .ant-steps-item-icon {
+  color: white;
+  background-color: #1890ff !important;
+}
+
+.step-reviewing.ant-steps-item-process .ant-steps-item-icon {
+  background-color: #f8ba3f !important;
+  color: white;
+}
+
+.step-finished.ant-steps-item-process .ant-steps-item-icon {
+  background-color: #52c41a !important;
+  color: white;
+}
+
+.ant-steps-item-icon-number{
+  color: white;
 }

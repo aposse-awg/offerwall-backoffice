@@ -1,9 +1,9 @@
 import { useParams } from 'react-router-dom'
-import sessions from '../data/sessions.json'
+import { useState } from 'react'
+import sessionsData from '../data/sessions.json'
 import SessionsTable from '../components/SessionsTable.jsx'
 import Insights from '../components/Insights-graphs.jsx'
 import Kpis from '../components/Kpis.jsx'
-
 
 const PUBLISHERS = {
   shonengamespodcast: '00000000-0000-4000-8000-000000000001',
@@ -12,6 +12,11 @@ const PUBLISHERS = {
 function PublisherView() {
   const { publisherSlug } = useParams()
   const publisherId = PUBLISHERS[publisherSlug]
+
+  const [sessions, setSessions] = useState(() => {
+    const saved = localStorage.getItem(`sessions_${publisherSlug}`)
+    return saved ? JSON.parse(saved) : sessionsData
+  })
 
   const publisherSessions = publisherId
     ? sessions.filter((s) => s.publisherId === publisherId)
@@ -29,7 +34,17 @@ function PublisherView() {
         {publisherSlug}.com/
       </h2>
       <Kpis data={publisherSessions} />
-      <SessionsTable data={publisherSessions} />
+      <SessionsTable
+        data={publisherSessions}
+        onUpdateData={(newSessions) => {
+          setSessions(newSessions)
+          localStorage.setItem(
+            `sessions_${publisherSlug}`,
+            JSON.stringify(newSessions),
+          )
+        }}
+      />
+
       <Insights data={publisherSessions} />
     </>
   )
