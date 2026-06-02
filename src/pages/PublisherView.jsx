@@ -14,7 +14,7 @@ function PublisherView() {
   const publisherId = PUBLISHERS[publisherSlug]
 
   const [sessions, setSessions] = useState(() => {
-    const saved = localStorage.getItem(`sessions_${publisherSlug}`)
+    const saved = localStorage.getItem('sessions')
     return saved ? JSON.parse(saved) : sessionsData
   })
 
@@ -36,12 +36,15 @@ function PublisherView() {
       <Kpis data={publisherSessions} />
       <SessionsTable
         data={publisherSessions}
-        onUpdateData={(newSessions) => {
-          setSessions(newSessions)
-          localStorage.setItem(
-            `sessions_${publisherSlug}`,
-            JSON.stringify(newSessions),
-          )
+        onUpdateData={(editedSessions) => {
+          // Mapear cambios de vuelta a todas las sesiones
+          const updatedAllSessions = sessions.map((session) => {
+            const edited = editedSessions.find((e) => e.id === session.id)
+            return edited || session
+          })
+
+          setSessions(updatedAllSessions)
+          localStorage.setItem('sessions', JSON.stringify(updatedAllSessions))
         }}
       />
 
