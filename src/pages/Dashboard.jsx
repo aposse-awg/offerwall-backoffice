@@ -5,22 +5,24 @@ import Insights from '../components/Insights-graphs.jsx'
 import Kpis from '../components/Kpis.jsx'
 
 function Dashboard() {
-const [sessions, setSessions] = useState(() => {
-const saved = localStorage.getItem('sessions_admin')
-  return saved ? JSON.parse(saved) : sessionsData
-})
+  const [sessions, setSessions] = useState(() => {
+    const saved = localStorage.getItem('sessions')
+    return saved ? JSON.parse(saved) : sessionsData
+  })
+
   return (
-  <>
-    <Kpis data={sessions} />
-    <SessionsTable 
-      data={sessions} 
-      onUpdateData={(newSessions) => {
-        setSessions(newSessions)
-        localStorage.setItem('sessions_admin', JSON.stringify(newSessions))
-      }}
-    />
-    <Insights data={sessions} />
-  </>
+    <>
+      <Kpis data={sessions} />
+      <SessionsTable
+        data={sessions}
+        onUpdateData={(newSessions) => {
+          setSessions(newSessions)
+          localStorage.setItem('sessions', JSON.stringify(newSessions))
+        }}
+        storageKey="sessions_admin"
+      />
+      <Insights data={sessions} />
+    </>
   )
 }
 

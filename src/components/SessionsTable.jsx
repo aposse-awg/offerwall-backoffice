@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useContext, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { Table, Grid, Button, Input, Form, Popconfirm, Tag } from 'antd'
+import { Table, Grid, Button, Input, Form, Popconfirm, Tag, Modal } from 'antd'
 import NotesDrawer from './NotesDrawer.jsx'
 import {
   DownloadOutlined,
@@ -78,6 +78,14 @@ const EditableCell = ({
                   },
                 ]
               : []),
+            ...(dataIndex === 'paidPrice'
+              ? [
+                  {
+                    pattern: /^\d+(\.\d{1,2})?$/,
+                    message: 'Enter a valid amount',
+                  },
+                ]
+              : []),
           ]}
         >
           <Input ref={inputRef} onPressEnter={save} />
@@ -119,6 +127,11 @@ function SessionsTable({ data, onUpdateData }) {
   const [notesDrawerOpen, setNotesDrawerOpen] = useState(false)
   const [selectedSession, setSelectedSession] = useState(null)
 
+  const [manualPaymentModalOpen, setManualPaymentModalOpen] = useState(false)
+  const [selectedSessionForPayment, setSelectedSessionForPayment] =
+    useState(null)
+  const [paymentNote, setPaymentNote] = useState('')
+
   const handleAddNote = (sessionId, note) => {
     const newData = data.map((item) => {
       if (item.id === sessionId) {
@@ -150,6 +163,31 @@ function SessionsTable({ data, onUpdateData }) {
     localStorage.setItem('sessions', JSON.stringify(newData))
     onUpdateData(newData)
   }
+
+const handleManualPayment = (sessionId, note, paidAmount) => {
+  const newData = data.map((item) => {
+    if (item.id === sessionId) {
+      return {
+        ...item,
+        paidAt: `forced_paid_${new Date().toISOString()}`,
+        paidPrice: paidAmount || item.paidPrice,
+        notes: [...(item.notes || []), {
+          id: Date.now().toString(),
+          content: `Manual payment approved: ${note}`,
+          author: user.username,
+          author_role: user.role,
+          author_scope: user.scope,
+          timestamp: new Date().toISOString(),
+        }]
+      }
+    }
+    return item
+  })
+
+  localStorage.setItem('sessions', JSON.stringify(newData))
+  onUpdateData(newData)
+}
+
 
   // Extract filters, sorter, pagination from URL
   const savedFilters = useMemo(() => {
@@ -365,6 +403,19 @@ function SessionsTable({ data, onUpdateData }) {
     console.log('Cambio guardado:', row)
   }
 
+  const confirmManualPayment = () => {
+    if (!paymentNote.trim()) {
+      alert('Note is required')
+      return
+    }
+
+    const paidAmount = selectedSessionForPayment?.manualAmount
+    handleManualPayment(selectedSessionForPayment.id, paymentNote, paidAmount)
+    setManualPaymentModalOpen(false)
+    setPaymentNote('')
+    setSelectedSessionForPayment(null)
+  }
+
   // Define table columns with controlled state
   const columns = [
     {
@@ -529,6 +580,28 @@ function SessionsTable({ data, onUpdateData }) {
           <Tag style={{ backgroundColor: config.color, color: 'white' }}>
             {config.label}
           </Tag>
+        )
+      },
+    },
+    {
+      title: 'Manual Payment',
+      dataIndex: 'paidAt',
+      render: (paidAt, record) => {
+        if (paidAt) {
+          return <span style={{ color: '#52c41a' }}>✓ Paid</span>
+        }
+        return (
+          <Button
+            type="primary"
+            danger
+            size="small"
+            onClick={() => {
+              setSelectedSessionForPayment(record)
+              setManualPaymentModalOpen(true)
+            }}
+          >
+            Mark as Paid
+          </Button>
         )
       },
     },
@@ -706,6 +779,55 @@ function SessionsTable({ data, onUpdateData }) {
           onUpdateReviewStatus={handleUpdateReviewStatus}
         />
       )}
+      <Modal
+        title="Confirm Manual Payment"
+        open={manualPaymentModalOpen}
+        onOk={confirmManualPayment}
+        onCancel={() => {
+          setManualPaymentModalOpen(false)
+          setPaymentNote('')
+        }}
+        okText="Confirm"
+        cancelText="Cancel"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label>
+              <strong>Session ID:</strong>
+            </label>
+            <p>{selectedSessionForPayment?.id?.substring(0, 8)}</p>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: 8 }}>
+              <strong>Paid Amount (Optional)</strong>
+            </label>
+            <Input
+              type="number"
+              placeholder="Enter amount in ARS"
+              value={selectedSessionForPayment?.manualAmount || ''}
+              onChange={(e) => {
+                setSelectedSessionForPayment({
+                  ...selectedSessionForPayment,
+                  manualAmount: e.target.value,
+                })
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: 8 }}>
+              <strong>Note (Required)</strong>
+            </label>
+            <Input.TextArea
+              placeholder="Explain why this manual payment is needed..."
+              value={paymentNote}
+              onChange={(e) => setPaymentNote(e.target.value)}
+              rows={4}
+            />
+          </div>
+        </div>
+      </Modal>
     </>
   )
 }

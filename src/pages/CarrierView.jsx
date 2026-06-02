@@ -10,7 +10,7 @@ const slugify = (str) => str.toLowerCase().replace(/\s+/g, '-')
 function PaymentEntityView() {
   const { paymentEntitySlug } = useParams()
   const [sessions, setSessions] = useState(() => {
-    const saved = localStorage.getItem(`sessions_${paymentEntitySlug}`)
+    const saved = localStorage.getItem('sessions')
     return saved ? JSON.parse(saved) : sessionsData
   })
 
@@ -36,12 +36,15 @@ function PaymentEntityView() {
       <Kpis data={paymentEntitySessions} />
       <SessionsTable
         data={paymentEntitySessions}
-        onUpdateData={(newSessions) => {
-          setSessions(newSessions)
-          localStorage.setItem(
-            `sessions_${paymentEntitySlug}`,
-            JSON.stringify(newSessions),
-          )
+        onUpdateData={(editedSessions) => {
+          // Mapear cambios de vuelta a todas las sesiones
+          const updatedAllSessions = sessions.map((session) => {
+            const edited = editedSessions.find((e) => e.id === session.id)
+            return edited || session
+          })
+
+          setSessions(updatedAllSessions)
+          localStorage.setItem('sessions', JSON.stringify(updatedAllSessions))
         }}
       />
       <Insights data={paymentEntitySessions} variant="payment-entity" />
