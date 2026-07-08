@@ -11,7 +11,11 @@ export const getSessions = async () => {
     headers
   })
   if (!response.ok) throw new Error('Failed to fetch sessions')
-  return response.json()
+  const data = await response.json()
+  return data.map(session => ({
+    ...session,
+    paidProviderName: session.paidProviderName || 'Test'
+  }))
 }
 
 export const updateSession = async (sessionId, updatedSession) => {

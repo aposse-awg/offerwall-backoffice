@@ -75,7 +75,7 @@ function Insights({ data, variant = 'full' }) {
 
   const byPaymentEntity = Object.entries(
     data.reduce((acc, s) => {
-      const name = s.provider?.name || 'Unknown Provider'
+      const name = (s.paidProviderName && s.paidProviderName !== 'Test') ? s.paidProviderName : 'Test'
       acc[name] = (acc[name] || 0) + 1
       return acc
     }, {}),
@@ -83,7 +83,7 @@ function Insights({ data, variant = 'full' }) {
 
   const revenueByPaymentEntity = Object.entries(
     data.reduce((acc, s) => {
-      const name = s.provider?.name || 'Unknown Provider'
+      const name = (s.paidProviderName && s.paidProviderName !== 'Test') ? s.paidProviderName : 'Test'
       acc[name] = (acc[name] || 0) + Number(s.paidPrice || 0)
       return acc
     }, {}),
