@@ -221,12 +221,9 @@ const handleManualPayment = (sessionId, note, paidAmount) => {
     const filtered = {}
     Object.entries(savedFilters).forEach(([key, values]) => {
       const validValues = values.filter((v) => {
-        // Nested field: provider.name
-        if (key === 'provider.name') {
-          if (v === 'Unknown Provider') {
-            return data.some((record) => !record.provider?.name)
-          }
-          return data.some((record) => String(record.provider?.name) === v)
+        // Payment provider filter
+        if (key === 'paidProviderName') {
+          return data.some((record) => String(record.paidProviderName) === v)
         }
         // Special case: paidAt field is boolean
         if (key === 'paidAt') {
@@ -264,12 +261,8 @@ const handleManualPayment = (sessionId, note, paidAmount) => {
 
           // Get field value from record
           let val
-          if (key === 'provider.name') {
-            // Unknown Provider case
-            if (values.includes('Unknown Provider') && !record.provider?.name) {
-              return true
-            }
-            val = record.provider?.name
+          if (key === 'paidProviderName') {
+            val = record.paidProviderName
           } else {
             val = record[key]
           }
@@ -286,9 +279,9 @@ const handleManualPayment = (sessionId, note, paidAmount) => {
         let aVal, bVal
 
         // Get sort values
-        if (field === 'provider.name') {
-          aVal = a.provider?.name
-          bVal = b.provider?.name
+        if (field === 'paidProviderName') {
+          aVal = a.paidProviderName
+          bVal = b.paidProviderName
         } else if (
           field === 'createdAt' ||
           field === 'expiresAt' ||
@@ -363,14 +356,8 @@ const handleManualPayment = (sessionId, note, paidAmount) => {
     ].map((c) => ({ text: c, value: c }))
 
     const carrierFilters = [
-      ...new Set(data.map((s) => s.provider?.name).filter(Boolean)),
+      ...new Set(data.map((s) => s.paidProviderName).filter(Boolean)),
     ].map((name) => ({ text: name, value: name }))
-    if (data.some((s) => !s.provider?.name)) {
-      carrierFilters.push({
-        text: 'Unknown Provider',
-        value: 'Unknown Provider',
-      })
-    }
 
     const publisherFilters = [
       ...new Set(data.map((s) => s.publisherId).filter(Boolean)),
@@ -443,16 +430,14 @@ const handleManualPayment = (sessionId, note, paidAmount) => {
     },
     {
       title: 'Payment Entity',
-      dataIndex: ['provider', 'name'],
-      key: 'provider.name',
+      dataIndex: 'paidProviderName',
+      key: 'paidProviderName',
       filters: carrierFilters,
-      filteredValue: validFilters['provider.name'] || null,
-      onFilter: (value, record) =>
-        value === 'Unknown Provider'
-          ? !record.provider?.name
-          : record.provider?.name === value,
+      filteredValue: validFilters['paidProviderName'] || null,
+      onFilter: (value, record) => record.paidProviderName === value,
       render: (name) => {
-        if (!name) return 'Unknown Provider'
+        if (!name) return 'Test'
+        if (name === 'Test') return name
         const icon =
           name === 'dLocal AR'
             ? 'https://www.dlocal.com/assets/images/static/favicon-2024-light.png'

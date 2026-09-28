@@ -24,3 +24,4 @@ dist-ssr
 *.sw?
 
 FEATURES_ANALYSIS.md
+.env
