@@ -10,7 +10,7 @@ import {
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import sessions from '../data/sessions.json'
+import { useSessions } from '../context/SessionsContext.jsx'
 
 const slugify = (str) => str.toLowerCase().replace(/\s+/g, '-')
 
@@ -19,6 +19,7 @@ function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
+  const { sessions } = useSessions()
 
   const isInPaymentEntityView = location.pathname.startsWith('/payment-entity/')
   const isInPublisherView = location.pathname.startsWith('/publisher/')
