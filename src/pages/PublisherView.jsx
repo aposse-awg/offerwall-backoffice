@@ -1,6 +1,5 @@
 import { useParams } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-import { getSessions, updateAllSessions } from '../api/sessionsApi'
+import { useSessions } from '../context/SessionsContext.jsx'
 import SessionsTable from '../components/SessionsTable.jsx'
 import Insights from '../components/Insights-graphs.jsx'
 import Kpis from '../components/Kpis.jsx'
@@ -13,18 +12,7 @@ function PublisherView() {
   const { publisherSlug } = useParams()
   const publisherId = PUBLISHERS[publisherSlug]
 
-  const [sessions, setSessions] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    getSessions()
-      .then(setSessions)
-      .catch(err => {
-        console.error('Error loading sessions:', err)
-        alert('Failed to load sessions')
-      })
-      .finally(() => setLoading(false))
-  }, [])
+  const { sessions, setSessions, loading } = useSessions()
 
   const publisherSessions = publisherId
     ? sessions.filter((s) => s.publisherId === publisherId)
@@ -38,19 +26,14 @@ function PublisherView() {
     )
   }
 
-  const handleUpdateData = async (editedSessions) => {
+  const handleUpdateData = (editedSessions) => {
     const updatedAllSessions = sessions.map((session) => {
       const edited = editedSessions.find((e) => e.id === session.id)
       return edited || session
     })
 
+    // The reports API is read-only: edits live in memory until reload
     setSessions(updatedAllSessions)
-    try {
-      await updateAllSessions(updatedAllSessions)
-    } catch (err) {
-      console.error('Error saving sessions:', err)
-      alert('Failed to save changes')
-    }
   }
 
   return (
